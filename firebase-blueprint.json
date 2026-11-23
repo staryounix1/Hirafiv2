@@ -1,0 +1,180 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated private user profile storing permanent role lock, contact phone, city, avatar URI, and craftsman bio metadata.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID of the signed-in user." },
+        "fullName": { "type": "string", "description": "User full display name." },
+        "email": { "type": "string", "description": "User verified email address." },
+        "phone": { "type": "string", "description": "Moroccan phone number for direct service coordination." },
+        "city": { "type": "string", "description": "Primary Moroccan city." },
+        "role": { "type": "string", "enum": ["client", "craftsman"], "description": "Permanent locked account role." },
+        "roleLocked": { "type": "boolean", "description": "Whether role lock is permanently active." },
+        "specialtyId": { "type": "string", "description": "Single locked specialty ID for craftsman accounts." },
+        "avatarUri": { "type": "string", "description": "Optional profile avatar URI." },
+        "bio": { "type": "string", "description": "Optional craftsman or user bio." },
+        "experienceYears": { "type": "integer", "description": "Optional years of trade experience for craftsmen." },
+        "basePriceDh": { "type": "integer", "description": "Optional starting base rate in MAD for craftsmen." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp set via FieldValue.serverTimestamp()." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp set via FieldValue.serverTimestamp()." }
+      },
+      "required": ["userId", "fullName", "email", "city", "role", "roleLocked", "specialtyId", "createdAt", "updatedAt"]
+    },
+    "CraftsmanPublicProfile": {
+      "title": "CraftsmanPublicProfile",
+      "description": "Public non-PII craftsman showcase and live availability directory for client discovery on the map.",
+      "type": "object",
+      "properties": {
+        "craftsmanId": { "type": "string", "description": "Craftsman Firebase Auth UID." },
+        "displayName": { "type": "string", "description": "Public display name." },
+        "specialtyId": { "type": "string", "description": "Single locked specialty ID." },
+        "specialtyName": { "type": "string", "description": "Arabic specialty label." },
+        "city": { "type": "string", "description": "Service city." },
+        "bio": { "type": "string", "description": "Craftsman service bio." },
+        "experienceYears": { "type": "integer", "description": "Years of experience." },
+        "rating": { "type": "number", "description": "Average rating between 1.0 and 5.0." },
+        "completedJobs": { "type": "integer", "description": "Count of completed services." },
+        "basePriceDh": { "type": "integer", "description": "Starting service price in MAD." },
+        "lat": { "type": "number", "description": "Craftsman latitude." },
+        "lng": { "type": "number", "description": "Craftsman longitude." },
+        "online": { "type": "boolean", "description": "Whether the craftsman is currently online for jobs." },
+        "avatarUri": { "type": "string", "description": "Optional avatar URI." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp." }
+      },
+      "required": ["craftsmanId", "displayName", "specialtyId", "specialtyName", "city", "bio", "experienceYears", "rating", "completedJobs", "basePriceDh", "lat", "lng", "online", "createdAt", "updatedAt"]
+    },
+    "PortfolioItem": {
+      "title": "PortfolioItem",
+      "description": "Completed project showcase card belonging to a craftsman.",
+      "type": "object",
+      "properties": {
+        "craftsmanId": { "type": "string", "description": "Craftsman Firebase Auth UID." },
+        "title": { "type": "string", "description": "Short project title." },
+        "description": { "type": "string", "description": "Details about the completed work." },
+        "categoryName": { "type": "string", "description": "Trade label." },
+        "photoUri": { "type": "string", "description": "Optional photo URI of completed work." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update timestamp." }
+      },
+      "required": ["craftsmanId", "title", "description", "categoryName", "createdAt", "updatedAt"]
+    },
+    "ServiceRequest": {
+      "title": "ServiceRequest",
+      "description": "Real-time service request posted by a client and matched with a craftsman.",
+      "type": "object",
+      "properties": {
+        "clientId": { "type": "string", "description": "Client Firebase Auth UID." },
+        "clientName": { "type": "string", "description": "Client display name." },
+        "categoryId": { "type": "string", "description": "Trade category ID." },
+        "categoryName": { "type": "string", "description": "Trade Arabic name." },
+        "title": { "type": "string", "description": "Service issue title." },
+        "description": { "type": "string", "description": "Detailed description." },
+        "addressLabel": { "type": "string", "description": "Neighborhood / street label." },
+        "lat": { "type": "number", "description": "Service latitude." },
+        "lng": { "type": "number", "description": "Service longitude." },
+        "proposedPrice": { "type": "integer", "description": "Client proposed fare in MAD." },
+        "acceptedPrice": { "type": "integer", "description": "Agreed final fare in MAD." },
+        "paymentMethod": { "type": "string", "enum": ["cash", "transfer", "card"] },
+        "urgent": { "type": "boolean", "description": "Urgency flag." },
+        "status": { "type": "string", "enum": ["searching", "accepted", "en_route", "arrived", "in_progress", "completed", "cancelled"] },
+        "assignedCraftsmanId": { "type": "string", "description": "Assigned craftsman UID." },
+        "assignedCraftsmanName": { "type": "string", "description": "Assigned craftsman display name." },
+        "assignedCraftsmanPhone": { "type": "string", "description": "Craftsman contact phone shared once accepted." },
+        "assignedCraftsmanRating": { "type": "number", "description": "Craftsman rating." },
+        "craftsmanLat": { "type": "number", "description": "Craftsman live GPS latitude." },
+        "craftsmanLng": { "type": "number", "description": "Craftsman live GPS longitude." },
+        "photoUri": { "type": "string", "description": "Optional attached issue photo URI." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update timestamp." }
+      },
+      "required": ["clientId", "clientName", "categoryId", "categoryName", "title", "description", "addressLabel", "lat", "lng", "proposedPrice", "paymentMethod", "urgent", "status", "createdAt", "updatedAt"]
+    },
+    "ServiceOffer": {
+      "title": "ServiceOffer",
+      "description": "Real-time craftsman bid/offer isolated from competing craftsmen.",
+      "type": "object",
+      "properties": {
+        "requestId": { "type": "string", "description": "Parent service request ID." },
+        "clientId": { "type": "string", "description": "Client UID copied from parent request." },
+        "craftsmanId": { "type": "string", "description": "Bidding craftsman UID." },
+        "craftsmanName": { "type": "string", "description": "Bidding craftsman display name." },
+        "craftsmanPhone": { "type": "string", "description": "Bidding craftsman contact phone." },
+        "craftsmanRating": { "type": "number", "description": "Craftsman rating." },
+        "completedJobs": { "type": "integer", "description": "Craftsman completed job count." },
+        "specialty": { "type": "string", "description": "Craftsman trade label." },
+        "offeredPrice": { "type": "integer", "description": "Offered price in MAD." },
+        "etaMinutes": { "type": "integer", "description": "Estimated arrival time in minutes." },
+        "distanceKm": { "type": "number", "description": "Distance to client in km." },
+        "note": { "type": "string", "description": "Offer or counter-offer note." },
+        "status": { "type": "string", "enum": ["pending", "accepted", "declined", "countered", "expired"] },
+        "expiresAtMillis": { "type": "integer", "description": "Offer expiration epoch milliseconds." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update timestamp." }
+      },
+      "required": ["requestId", "clientId", "craftsmanId", "craftsmanName", "craftsmanPhone", "craftsmanRating", "completedJobs", "specialty", "offeredPrice", "etaMinutes", "distanceKm", "note", "status", "expiresAtMillis", "createdAt", "updatedAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Real-time chat message between client and assigned craftsman.",
+      "type": "object",
+      "properties": {
+        "requestId": { "type": "string", "description": "Parent service request ID." },
+        "memberUids": { "type": "array", "description": "Authorized participant UIDs for list filtering." },
+        "senderId": { "type": "string", "description": "Sender Firebase Auth UID." },
+        "senderName": { "type": "string", "description": "Sender display name." },
+        "senderRole": { "type": "string", "enum": ["client", "craftsman"] },
+        "text": { "type": "string", "description": "Message body." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp." }
+      },
+      "required": ["requestId", "memberUids", "senderId", "senderName", "senderRole", "text", "createdAt"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Immutable post-service review left by a client.",
+      "type": "object",
+      "properties": {
+        "requestId": { "type": "string", "description": "Completed service request ID." },
+        "clientId": { "type": "string", "description": "Author client UID." },
+        "craftsmanId": { "type": "string", "description": "Reviewed craftsman UID." },
+        "rating": { "type": "integer", "description": "1 to 5 stars." },
+        "tags": { "type": "array", "description": "Quick review tags." },
+        "comment": { "type": "string", "description": "Optional text review." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp." }
+      },
+      "required": ["requestId", "clientId", "craftsmanId", "rating", "tags", "comment", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user profile document keyed by Firebase Auth UID."
+    },
+    "/craftsmen_directory/{craftsmanId}": {
+      "schema": { "$ref": "#/entities/CraftsmanPublicProfile" },
+      "description": "Public craftsman showcase and online presence for map discovery."
+    },
+    "/craftsmen_directory/{craftsmanId}/portfolio/{itemId}": {
+      "schema": { "$ref": "#/entities/PortfolioItem" },
+      "description": "Portfolio showcase cards authored by the craftsman."
+    },
+    "/service_requests/{requestId}": {
+      "schema": { "$ref": "#/entities/ServiceRequest" },
+      "description": "Active and historical service requests synchronized in real time."
+    },
+    "/service_requests/{requestId}/offers/{offerId}": {
+      "schema": { "$ref": "#/entities/ServiceOffer" },
+      "description": "Bids and counter-offers strictly isolated from competing craftsmen."
+    },
+    "/service_requests/{requestId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Real-time chat messages scoped to participating users."
+    },
+    "/reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/Review" },
+      "description": "Verified service reviews submitted after job completion."
+    }
+  }
+}

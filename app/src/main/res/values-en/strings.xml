@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Hirafi</string>
+    <string name="app_tagline">Hirafi — Name your price, choose your pro</string>
+    <string name="mode_client">Client Mode</string>
+    <string name="mode_craftsman">Craftsman Mode</string>
+    <string name="action_find_craftsman">Find a Craftsman</string>
+    <string name="action_accept_offer">Accept</string>
+    <string name="action_decline_offer">Decline</string>
+    <string name="action_counter_offer">Counter</string>
+    <string name="action_cancel_request">Cancel Request</string>
+    <string name="currency_dh">DH</string>
+</resources>

@@ -1,0 +1,39 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidImageUpload() {
+      return request.resource != null &&
+             request.resource.size < 10 * 1024 * 1024 &&
+             request.resource.contentType.matches('image/.*');
+    }
+
+    match /users/{userId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == userId && isValidImageUpload();
+    }
+
+    match /requests/{userId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == userId && isValidImageUpload();
+    }
+
+    match /portfolio/{userId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == userId && isValidImageUpload();
+    }
+
+    match /verifications/{userId}/{fileName} {
+      allow read: if isSignedIn() && (
+        request.auth.uid == userId ||
+        (request.auth.token.email_verified == true &&
+         request.auth.token.email == 'youness065220@gmail.com')
+      );
+      allow write: if isSignedIn() && request.auth.uid == userId && isValidImageUpload();
+    }
+  }
+}

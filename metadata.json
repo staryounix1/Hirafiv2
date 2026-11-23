@@ -1,0 +1,6 @@
+{
+  "name": "Hirafi",
+  "description": "InDrive-style local craftsmen and home services marketplace with live price bidding, counter-offers, GPS location matching, and real-time job tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Hirafi</string>
+    <string name="app_tagline">حرفي — حدد سعرك واختر حرفيك</string>
+    <string name="mode_client">وضع الزبون</string>
+    <string name="mode_craftsman">وضع الحرفي</string>
+    <string name="action_find_craftsman">ابحث عن حرفي</string>
+    <string name="action_accept_offer">قبول</string>
+    <string name="action_decline_offer">رفض</string>
+    <string name="action_counter_offer">مفاوضة</string>
+    <string name="action_cancel_request">إلغاء الطلب</string>
+    <string name="currency_dh">درهم</string>
+    <string name="default_web_client_id" translatable="false">466578892927-61h7tk0gp0r8v53l5mqgn8en436r8g1n.apps.googleusercontent.com</string>
+</resources>

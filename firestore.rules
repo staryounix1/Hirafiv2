@@ -1,0 +1,580 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isBootstrapAdmin() {
+      return isSignedIn() &&
+             request.auth.token.email_verified == true &&
+             request.auth.token.email == 'youness065220@gmail.com';
+    }
+
+    function isAuthorizedAdmin() {
+      return isBootstrapAdmin() ||
+             (isSignedIn() &&
+              request.auth.token.email_verified == true &&
+              exists(/databases/$(database)/documents/authorized_admins/$(request.auth.token.email)));
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 80 &&
+             data.email is string && data.email.size() >= 3 && data.email.size() <= 120 &&
+             data.city is string && data.city.size() >= 2 && data.city.size() <= 60 &&
+             data.role in ['client', 'craftsman', 'admin'] &&
+             data.roleLocked is bool &&
+             data.specialtyId is string && data.specialtyId.size() >= 2 && data.specialtyId.size() <= 40 &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() >= 6 && data.phone.size() <= 30)) &&
+             (!('avatarUri' in data) || (data.avatarUri is string && data.avatarUri.size() <= 500)) &&
+             (!('bio' in data) || (data.bio is string && data.bio.size() <= 400)) &&
+             (!('experienceYears' in data) || (data.experienceYears is int && data.experienceYears >= 0 && data.experienceYears <= 60)) &&
+             (!('basePriceDh' in data) || (data.basePriceDh is int && data.basePriceDh >= 40 && data.basePriceDh <= 5000)) &&
+             (!('fcmToken' in data) || (data.fcmToken is string && data.fcmToken.size() <= 500)) &&
+             (!('verificationStatus' in data) || data.verificationStatus in ['not_submitted', 'pending_review', 'verified', 'rejected']) &&
+             (!('rejectionReason' in data) || (data.rejectionReason is string && data.rejectionReason.size() <= 300)) &&
+             (!('isSuspended' in data) || data.isSuspended is bool) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidCraftsmanPublic(data) {
+      return data.craftsmanId is string && data.craftsmanId.size() >= 1 && data.craftsmanId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 2 && data.displayName.size() <= 80 &&
+             data.specialtyId is string && data.specialtyId.size() >= 2 && data.specialtyId.size() <= 40 &&
+             data.specialtyName is string && data.specialtyName.size() >= 2 && data.specialtyName.size() <= 60 &&
+             data.city is string && data.city.size() >= 2 && data.city.size() <= 60 &&
+             data.bio is string && data.bio.size() <= 400 &&
+             data.experienceYears is int && data.experienceYears >= 0 && data.experienceYears <= 60 &&
+             data.rating is number && data.rating >= 1.0 && data.rating <= 5.0 &&
+             data.completedJobs is int && data.completedJobs >= 0 && data.completedJobs <= 100000 &&
+             data.basePriceDh is int && data.basePriceDh >= 40 && data.basePriceDh <= 5000 &&
+             data.lat is number && data.lat >= -90.0 && data.lat <= 90.0 &&
+             data.lng is number && data.lng >= -180.0 && data.lng <= 180.0 &&
+             data.online is bool &&
+             (!('isVerified' in data) || data.isVerified is bool) &&
+             (!('isSuspended' in data) || data.isSuspended is bool) &&
+             (!('avatarUri' in data) || (data.avatarUri is string && data.avatarUri.size() <= 500)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidPortfolioItem(data) {
+      return data.craftsmanId is string && data.craftsmanId.size() >= 1 && data.craftsmanId.size() <= 128 &&
+             data.title is string && data.title.size() >= 2 && data.title.size() <= 80 &&
+             data.description is string && data.description.size() <= 350 &&
+             data.categoryName is string && data.categoryName.size() >= 2 && data.categoryName.size() <= 60 &&
+             (!('photoUri' in data) || (data.photoUri is string && data.photoUri.size() <= 500)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidVerificationSubmission(data) {
+      return data.craftsmanId is string && data.craftsmanId.size() >= 1 && data.craftsmanId.size() <= 128 &&
+             data.craftsmanName is string && data.craftsmanName.size() >= 2 && data.craftsmanName.size() <= 80 &&
+             data.specialtyId is string && data.specialtyId.size() >= 2 && data.specialtyId.size() <= 40 &&
+             data.city is string && data.city.size() >= 2 && data.city.size() <= 60 &&
+             data.nationalIdNumber is string && data.nationalIdNumber.size() >= 4 && data.nationalIdNumber.size() <= 20 &&
+             data.frontPhotoUri is string && data.frontPhotoUri.size() <= 500 &&
+             data.backPhotoUri is string && data.backPhotoUri.size() <= 500 &&
+             data.selfiePhotoUri is string && data.selfiePhotoUri.size() <= 500 &&
+             data.status in ['pending_review', 'verified', 'rejected'] &&
+             (!('rejectionReason' in data) || (data.rejectionReason is string && data.rejectionReason.size() <= 300)) &&
+             (!('reviewedByEmail' in data) || (data.reviewedByEmail is string && data.reviewedByEmail.size() <= 120)) &&
+             data.submittedAt is timestamp && data.submittedAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidServiceRequest(data) {
+      return data.clientId is string && data.clientId.size() >= 1 && data.clientId.size() <= 128 &&
+             data.clientName is string && data.clientName.size() >= 1 && data.clientName.size() <= 80 &&
+             data.categoryId is string && data.categoryId.size() >= 2 && data.categoryId.size() <= 40 &&
+             data.categoryName is string && data.categoryName.size() >= 2 && data.categoryName.size() <= 60 &&
+             data.title is string && data.title.size() >= 2 && data.title.size() <= 140 &&
+             data.description is string && data.description.size() <= 600 &&
+             data.addressLabel is string && data.addressLabel.size() >= 2 && data.addressLabel.size() <= 160 &&
+             data.lat is number && data.lat >= -90.0 && data.lat <= 90.0 &&
+             data.lng is number && data.lng >= -180.0 && data.lng <= 180.0 &&
+             data.proposedPrice is int && data.proposedPrice >= 40 && data.proposedPrice <= 10000 &&
+             (!('acceptedPrice' in data) || (data.acceptedPrice is int && data.acceptedPrice >= 40 && data.acceptedPrice <= 10000)) &&
+             data.paymentMethod in ['cash', 'transfer', 'card'] &&
+             data.urgent is bool &&
+             data.status in ['searching', 'accepted', 'en_route', 'arrived', 'in_progress', 'completed', 'cancelled'] &&
+             (!('assignedCraftsmanId' in data) || (data.assignedCraftsmanId is string && data.assignedCraftsmanId.size() >= 1 && data.assignedCraftsmanId.size() <= 128)) &&
+             (!('assignedCraftsmanName' in data) || (data.assignedCraftsmanName is string && data.assignedCraftsmanName.size() <= 80)) &&
+             (!('assignedCraftsmanPhone' in data) || (data.assignedCraftsmanPhone is string && data.assignedCraftsmanPhone.size() <= 30)) &&
+             (!('assignedCraftsmanRating' in data) || (data.assignedCraftsmanRating is number && data.assignedCraftsmanRating >= 1.0 && data.assignedCraftsmanRating <= 5.0)) &&
+             (!('craftsmanLat' in data) || (data.craftsmanLat is number && data.craftsmanLat >= -90.0 && data.craftsmanLat <= 90.0)) &&
+             (!('craftsmanLng' in data) || (data.craftsmanLng is number && data.craftsmanLng >= -180.0 && data.craftsmanLng <= 180.0)) &&
+             (!('photoUri' in data) || (data.photoUri is string && data.photoUri.size() <= 500)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidServiceOffer(data) {
+      return data.requestId is string && data.requestId.size() >= 1 && data.requestId.size() <= 128 &&
+             data.clientId is string && data.clientId.size() >= 1 && data.clientId.size() <= 128 &&
+             data.craftsmanId is string && data.craftsmanId.size() >= 1 && data.craftsmanId.size() <= 128 &&
+             data.craftsmanName is string && data.craftsmanName.size() >= 1 && data.craftsmanName.size() <= 80 &&
+             data.craftsmanPhone is string && data.craftsmanPhone.size() >= 4 && data.craftsmanPhone.size() <= 30 &&
+             data.craftsmanRating is number && data.craftsmanRating >= 1.0 && data.craftsmanRating <= 5.0 &&
+             data.completedJobs is int && data.completedJobs >= 0 && data.completedJobs <= 100000 &&
+             data.specialty is string && data.specialty.size() >= 2 && data.specialty.size() <= 60 &&
+             data.offeredPrice is int && data.offeredPrice >= 40 && data.offeredPrice <= 10000 &&
+             data.etaMinutes is int && data.etaMinutes >= 1 && data.etaMinutes <= 240 &&
+             data.distanceKm is number && data.distanceKm >= 0.0 && data.distanceKm <= 500.0 &&
+             data.note is string && data.note.size() <= 300 &&
+             data.status in ['pending', 'accepted', 'declined', 'countered', 'expired'] &&
+             data.expiresAtMillis is int && data.expiresAtMillis > 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidChatMessage(data) {
+      return data.requestId is string && data.requestId.size() >= 1 && data.requestId.size() <= 128 &&
+             data.memberUids is list && data.memberUids.size() >= 1 && data.memberUids.size() <= 4 &&
+             data.memberUids[0] is string &&
+             data.senderId is string && data.senderId.size() >= 1 && data.senderId.size() <= 128 &&
+             data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 80 &&
+             data.senderRole in ['client', 'craftsman', 'admin'] &&
+             data.text is string && data.text.size() >= 1 && data.text.size() <= 1000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidReview(data) {
+      return data.requestId is string && data.requestId.size() >= 1 && data.requestId.size() <= 128 &&
+             data.clientId is string && data.clientId.size() >= 1 && data.clientId.size() <= 128 &&
+             data.craftsmanId is string && data.craftsmanId.size() >= 1 && data.craftsmanId.size() <= 128 &&
+             data.rating is int && data.rating >= 1 && data.rating <= 5 &&
+             data.tags is list && data.tags.size() <= 8 && (data.tags.size() == 0 || data.tags[0] is string) &&
+             data.comment is string && data.comment.size() <= 500 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    match /authorized_admins/{adminEmail} {
+      allow get: if isAuthorizedAdmin() ||
+                    (isSignedIn() &&
+                     request.auth.token.email_verified == true &&
+                     request.auth.token.email == adminEmail);
+      allow list: if isAuthorizedAdmin();
+      allow create, update: if isAuthorizedAdmin() &&
+                               adminEmail is string &&
+                               adminEmail.size() >= 3 &&
+                               adminEmail.size() <= 120 &&
+                               incoming().email == adminEmail &&
+                               incoming().addedBy is string &&
+                               incoming().createdAt is timestamp &&
+                               incoming().createdAt <= request.time;
+      allow delete: if isAuthorizedAdmin() && adminEmail != 'youness065220@gmail.com';
+    }
+
+    match /app_config/{configId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isAuthorizedAdmin() &&
+                               configId == 'runtime' &&
+                               incoming().productionMode is bool &&
+                               incoming().updatedByEmail is string &&
+                               incoming().updatedAt is timestamp &&
+                               incoming().updatedAt <= request.time;
+      allow delete: if false;
+    }
+
+    match /users/{userId} {
+      allow get, list: if (isSignedIn() && request.auth.uid == userId) || isAuthorizedAdmin();
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       incoming().userId == request.auth.uid &&
+                       (incoming().role != 'admin' || isAuthorizedAdmin()) &&
+                       (!('verificationStatus' in incoming()) || incoming().verificationStatus == 'not_submitted') &&
+                       (!('isSuspended' in incoming()) || incoming().isSuspended == false) &&
+                       incoming().keys().hasAll([
+                         'userId', 'fullName', 'email', 'city',
+                         'role', 'roleLocked', 'specialtyId', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'fullName', 'email', 'phone', 'city',
+                         'role', 'roleLocked', 'specialtyId',
+                         'avatarUri', 'bio', 'experienceYears', 'basePriceDh',
+                         'fcmToken', 'verificationStatus', 'rejectionReason', 'isSuspended',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUserProfile(incoming()) &&
+                       (
+                         (
+                           request.auth.uid == userId &&
+                           (!existing().roleLocked ||
+                             (isAuthorizedAdmin() && incoming().role == 'admin') ||
+                             (
+                               incoming().role == existing().role &&
+                               incoming().roleLocked == true &&
+                               (existing().role != 'craftsman' || incoming().specialtyId == existing().specialtyId)
+                             )
+                           ) &&
+                           (incoming().role != 'admin' || isAuthorizedAdmin()) &&
+                           (!('isSuspended' in incoming()) || incoming().isSuspended == (('isSuspended' in existing()) ? existing().isSuspended : false)) &&
+                           (!('verificationStatus' in incoming()) || incoming().verificationStatus in ['not_submitted', 'pending_review']) &&
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'fullName', 'email', 'phone', 'city',
+                             'role', 'roleLocked', 'specialtyId',
+                             'avatarUri', 'bio', 'experienceYears', 'basePriceDh',
+                             'fcmToken', 'verificationStatus', 'rejectionReason',
+                             'updatedAt'
+                           ])
+                         ) ||
+                         (
+                           isAuthorizedAdmin() &&
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'verificationStatus', 'rejectionReason', 'isSuspended', 'updatedAt'
+                           ])
+                         )
+                       );
+
+      allow delete: if false;
+    }
+
+    match /craftsmen_directory/{craftsmanId} {
+      allow get: if isSignedIn() && isValidId(craftsmanId) &&
+                    (existing().online == true || existing().craftsmanId == request.auth.uid || isAuthorizedAdmin());
+
+      allow list: if isSignedIn() &&
+                     (resource.data.online == true || resource.data.craftsmanId == request.auth.uid || isAuthorizedAdmin());
+
+      allow create: if isSignedIn() &&
+                       isValidId(craftsmanId) &&
+                       request.auth.uid == craftsmanId &&
+                       incoming().craftsmanId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'craftsmanId', 'displayName', 'specialtyId', 'specialtyName', 'city',
+                         'bio', 'experienceYears', 'rating', 'completedJobs', 'basePriceDh',
+                         'lat', 'lng', 'online', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'craftsmanId', 'displayName', 'specialtyId', 'specialtyName', 'city',
+                         'bio', 'experienceYears', 'rating', 'completedJobs', 'basePriceDh',
+                         'lat', 'lng', 'online', 'isVerified', 'isSuspended', 'avatarUri', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidCraftsmanPublic(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(craftsmanId) &&
+                       incoming().craftsmanId == existing().craftsmanId &&
+                       incoming().specialtyId == existing().specialtyId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidCraftsmanPublic(incoming()) &&
+                       (
+                         (
+                           request.auth.uid == craftsmanId &&
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'displayName', 'city', 'bio', 'experienceYears',
+                             'basePriceDh', 'lat', 'lng', 'online', 'avatarUri', 'updatedAt'
+                           ])
+                         ) ||
+                         (
+                           isAuthorizedAdmin() &&
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'isVerified', 'online', 'isSuspended', 'updatedAt'
+                           ])
+                         )
+                       );
+
+      allow delete: if false;
+
+      match /portfolio/{itemId} {
+        allow get: if isSignedIn() && isValidId(craftsmanId) && isValidId(itemId);
+        allow list: if isSignedIn();
+
+        allow create: if isSignedIn() &&
+                         isValidId(craftsmanId) &&
+                         isValidId(itemId) &&
+                         request.auth.uid == craftsmanId &&
+                         incoming().craftsmanId == request.auth.uid &&
+                         incoming().keys().hasAll(['craftsmanId', 'title', 'description', 'categoryName', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['craftsmanId', 'title', 'description', 'categoryName', 'photoUri', 'createdAt', 'updatedAt']) &&
+                         isValidPortfolioItem(incoming());
+
+        allow update: if isSignedIn() &&
+                         isValidId(craftsmanId) &&
+                         isValidId(itemId) &&
+                         request.auth.uid == craftsmanId &&
+                         incoming().craftsmanId == existing().craftsmanId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidPortfolioItem(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'photoUri', 'updatedAt']);
+
+        allow delete: if isSignedIn() &&
+                         isValidId(craftsmanId) &&
+                         isValidId(itemId) &&
+                         (request.auth.uid == craftsmanId || isAuthorizedAdmin());
+      }
+    }
+
+    match /verification_submissions/{craftsmanId} {
+      allow get: if (isSignedIn() && isValidId(craftsmanId) && request.auth.uid == craftsmanId) || isAuthorizedAdmin();
+      allow list: if isAuthorizedAdmin() || (isSignedIn() && resource.data.craftsmanId == request.auth.uid);
+
+      allow create: if isSignedIn() &&
+                       isValidId(craftsmanId) &&
+                       request.auth.uid == craftsmanId &&
+                       incoming().craftsmanId == request.auth.uid &&
+                       incoming().status == 'pending_review' &&
+                       incoming().keys().hasAll([
+                         'craftsmanId', 'craftsmanName', 'specialtyId', 'city',
+                         'nationalIdNumber', 'frontPhotoUri', 'backPhotoUri', 'selfiePhotoUri',
+                         'status', 'submittedAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'craftsmanId', 'craftsmanName', 'specialtyId', 'city',
+                         'nationalIdNumber', 'frontPhotoUri', 'backPhotoUri', 'selfiePhotoUri',
+                         'status', 'rejectionReason', 'reviewedByEmail', 'submittedAt', 'updatedAt'
+                       ]) &&
+                       isValidVerificationSubmission(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(craftsmanId) &&
+                       incoming().craftsmanId == existing().craftsmanId &&
+                       isValidVerificationSubmission(incoming()) &&
+                       (
+                         (
+                           request.auth.uid == craftsmanId &&
+                           incoming().status == 'pending_review' &&
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'craftsmanName', 'specialtyId', 'city',
+                             'nationalIdNumber', 'frontPhotoUri', 'backPhotoUri', 'selfiePhotoUri',
+                             'status', 'rejectionReason', 'submittedAt', 'updatedAt'
+                           ])
+                         ) ||
+                         (
+                           isAuthorizedAdmin() &&
+                           incoming().status in ['pending_review', 'verified', 'rejected'] &&
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'status', 'rejectionReason', 'reviewedByEmail', 'updatedAt'
+                           ])
+                         )
+                       );
+
+      allow delete: if false;
+    }
+
+    match /service_requests/{requestId} {
+      allow get: if isSignedIn() && isValidId(requestId) &&
+                    (existing().clientId == request.auth.uid ||
+                     existing().assignedCraftsmanId == request.auth.uid ||
+                     existing().status == 'searching' ||
+                     isAuthorizedAdmin());
+
+      allow list: if isSignedIn() &&
+                     (resource.data.clientId == request.auth.uid ||
+                      resource.data.assignedCraftsmanId == request.auth.uid ||
+                      resource.data.status == 'searching' ||
+                      isAuthorizedAdmin());
+
+      allow create: if isSignedIn() &&
+                       isValidId(requestId) &&
+                       incoming().clientId == request.auth.uid &&
+                       incoming().status == 'searching' &&
+                       incoming().keys().hasAll([
+                         'clientId', 'clientName', 'categoryId', 'categoryName',
+                         'title', 'description', 'addressLabel', 'lat', 'lng',
+                         'proposedPrice', 'paymentMethod', 'urgent', 'status',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'clientId', 'clientName', 'categoryId', 'categoryName',
+                         'title', 'description', 'addressLabel', 'lat', 'lng',
+                         'proposedPrice', 'acceptedPrice', 'paymentMethod', 'urgent', 'status',
+                         'assignedCraftsmanId', 'assignedCraftsmanName', 'assignedCraftsmanPhone',
+                         'assignedCraftsmanRating', 'craftsmanLat', 'craftsmanLng', 'photoUri',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidServiceRequest(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(requestId) &&
+                       isValidServiceRequest(incoming()) &&
+                       incoming().clientId == existing().clientId &&
+                       incoming().categoryId == existing().categoryId &&
+                       incoming().createdAt == existing().createdAt &&
+                       !(existing().status in ['completed', 'cancelled']) &&
+                       (
+                         (existing().clientId == request.auth.uid &&
+                          existing().status == 'searching' &&
+                          incoming().status == 'searching' &&
+                          incoming().diff(existing()).affectedKeys().hasOnly(['proposedPrice', 'updatedAt'])) ||
+
+                         (existing().clientId == request.auth.uid &&
+                          existing().status in ['searching', 'accepted', 'en_route', 'arrived'] &&
+                          incoming().status == 'cancelled' &&
+                          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])) ||
+
+                         (existing().clientId == request.auth.uid &&
+                          existing().status == 'searching' &&
+                          incoming().status == 'accepted' &&
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'status', 'acceptedPrice', 'assignedCraftsmanId',
+                            'assignedCraftsmanName', 'assignedCraftsmanPhone',
+                            'assignedCraftsmanRating', 'updatedAt'
+                          ])) ||
+
+                         (existing().status == 'searching' &&
+                          incoming().status == 'accepted' &&
+                          incoming().assignedCraftsmanId == request.auth.uid &&
+                          incoming().acceptedPrice == existing().proposedPrice &&
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'status', 'acceptedPrice', 'assignedCraftsmanId',
+                            'assignedCraftsmanName', 'assignedCraftsmanPhone',
+                            'assignedCraftsmanRating', 'updatedAt'
+                          ])) ||
+
+                         (existing().assignedCraftsmanId == request.auth.uid &&
+                          existing().status in ['accepted', 'en_route', 'arrived', 'in_progress'] &&
+                          incoming().diff(existing()).affectedKeys().hasOnly(['craftsmanLat', 'craftsmanLng', 'updatedAt'])) ||
+
+                         ((existing().clientId == request.auth.uid || existing().assignedCraftsmanId == request.auth.uid) &&
+                          existing().status in ['accepted', 'en_route', 'arrived', 'in_progress'] &&
+                          incoming().status in ['en_route', 'arrived', 'in_progress', 'completed', 'cancelled'] &&
+                          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])) ||
+
+                         (isAuthorizedAdmin() &&
+                          incoming().status == 'cancelled' &&
+                          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+                       );
+
+      allow delete: if false;
+
+      match /offers/{offerId} {
+        allow get: if isSignedIn() && isValidId(requestId) && isValidId(offerId) &&
+                      (existing().clientId == request.auth.uid || existing().craftsmanId == request.auth.uid || isAuthorizedAdmin());
+
+        allow list: if isSignedIn() &&
+                       (resource.data.clientId == request.auth.uid || resource.data.craftsmanId == request.auth.uid || isAuthorizedAdmin());
+
+        allow create: if isSignedIn() &&
+                         isValidId(requestId) &&
+                         isValidId(offerId) &&
+                         isValidServiceOffer(incoming()) &&
+                         incoming().craftsmanId == request.auth.uid &&
+                         incoming().requestId == requestId &&
+                         incoming().status == 'pending' &&
+                         incoming().keys().hasAll([
+                           'requestId', 'clientId', 'craftsmanId', 'craftsmanName',
+                           'craftsmanPhone', 'craftsmanRating', 'completedJobs', 'specialty',
+                           'offeredPrice', 'etaMinutes', 'distanceKm', 'note',
+                           'status', 'expiresAtMillis', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'requestId', 'clientId', 'craftsmanId', 'craftsmanName',
+                           'craftsmanPhone', 'craftsmanRating', 'completedJobs', 'specialty',
+                           'offeredPrice', 'etaMinutes', 'distanceKm', 'note',
+                           'status', 'expiresAtMillis', 'createdAt', 'updatedAt'
+                         ]) &&
+                         exists(/databases/$(database)/documents/service_requests/$(requestId)) &&
+                         get(/databases/$(database)/documents/service_requests/$(requestId)).data.status == 'searching' &&
+                         get(/databases/$(database)/documents/service_requests/$(requestId)).data.clientId == incoming().clientId;
+
+        allow update: if isSignedIn() &&
+                         isValidId(requestId) &&
+                         isValidId(offerId) &&
+                         isValidServiceOffer(incoming()) &&
+                         !(existing().status in ['accepted', 'declined', 'expired']) &&
+                         incoming().requestId == existing().requestId &&
+                         incoming().clientId == existing().clientId &&
+                         incoming().craftsmanId == existing().craftsmanId &&
+                         incoming().createdAt == existing().createdAt &&
+                         (
+                           (existing().clientId == request.auth.uid &&
+                            incoming().status in ['accepted', 'declined', 'countered'] &&
+                            incoming().diff(existing()).affectedKeys().hasOnly([
+                              'status', 'offeredPrice', 'note', 'expiresAtMillis', 'updatedAt'
+                            ])) ||
+                           (existing().craftsmanId == request.auth.uid &&
+                            incoming().status in ['pending', 'accepted'] &&
+                            incoming().diff(existing()).affectedKeys().hasOnly([
+                              'status', 'offeredPrice', 'etaMinutes', 'note', 'expiresAtMillis', 'updatedAt'
+                            ]))
+                         );
+
+        allow delete: if false;
+      }
+
+      match /messages/{messageId} {
+        allow get: if isSignedIn() && isValidId(requestId) && isValidId(messageId) &&
+                      (request.auth.uid in existing().memberUids);
+
+        allow list: if isSignedIn() &&
+                       (request.auth.uid in resource.data.memberUids);
+
+        allow create: if isSignedIn() &&
+                         isValidId(requestId) &&
+                         isValidId(messageId) &&
+                         isValidChatMessage(incoming()) &&
+                         incoming().senderId == request.auth.uid &&
+                         incoming().requestId == requestId &&
+                         request.auth.uid in incoming().memberUids &&
+                         incoming().keys().hasAll([
+                           'requestId', 'memberUids', 'senderId', 'senderName',
+                           'senderRole', 'text', 'createdAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'requestId', 'memberUids', 'senderId', 'senderName',
+                           'senderRole', 'text', 'createdAt'
+                         ]) &&
+                         exists(/databases/$(database)/documents/service_requests/$(requestId)) &&
+                         (
+                           get(/databases/$(database)/documents/service_requests/$(requestId)).data.clientId == request.auth.uid ||
+                           get(/databases/$(database)/documents/service_requests/$(requestId)).data.assignedCraftsmanId == request.auth.uid
+                         );
+
+        allow update, delete: if false;
+      }
+    }
+
+    match /reviews/{reviewId} {
+      allow get: if isSignedIn() && isValidId(reviewId) &&
+                    (existing().clientId == request.auth.uid || existing().craftsmanId == request.auth.uid || isAuthorizedAdmin());
+
+      allow list: if isSignedIn() &&
+                     (resource.data.clientId == request.auth.uid || resource.data.craftsmanId == request.auth.uid || isAuthorizedAdmin());
+
+      allow create: if isSignedIn() &&
+                       isValidId(reviewId) &&
+                       isValidReview(incoming()) &&
+                       incoming().clientId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'requestId', 'clientId', 'craftsmanId', 'rating', 'tags', 'comment', 'createdAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'requestId', 'clientId', 'craftsmanId', 'rating', 'tags', 'comment', 'createdAt'
+                       ]) &&
+                       exists(/databases/$(database)/documents/service_requests/$(incoming().requestId)) &&
+                       get(/databases/$(database)/documents/service_requests/$(incoming().requestId)).data.clientId == request.auth.uid;
+
+      allow update, delete: if false;
+    }
+  }
+}
